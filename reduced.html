@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link href='https://unpkg.com/tailwindcss@2.0.4/dist/tailwind.min.css' rel='stylesheet'>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/2.3.5/alpine.js" integrity="sha512-MF55BI9HWsrGm7fyHye57RYohxQNzMBq5HMipUlFubeAzZ1TUPxmQikcxxBdTZ2Zuwza+1JuXCGNtvn4S8Fq0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!--Algolia Search-->
+  <script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.5.1/dist/algoliasearch-lite.umd.js" integrity="sha256-EXPXz4W6pQgfYY3yTpnDa3OH8/EPn16ciVsPQ/ypsjk=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.8.3/dist/instantsearch.production.min.js" integrity="sha256-LAGhRRdtVoD6RLo2qDQsU2mp+XVSciKRC8XPOBWmofM=" crossorigin="anonymous"></script>
+
+  <script src="./search.js"></script>
+
+  <!--OLD COMBINED JS FILE-->
+  <!--<script src="https://atlas.fm/assets/iframe-d8a4fd5c554ef1e81e63b6cbe3b9ea1ccec4c019601eab6e6a8600a42f62ca47.js"></script>-->
+</head>
+
+<body>
+  <div class='p-4 bg-white' id='block-form'>
+    <form class="simple-form bg-white" accept-charset="UTF-8" data-remote="true" id="afm">
+	<input name="utf8" type="hidden" value="&#x2713;" /><input
+        type="hidden" name="_method" value="patch" />
+      <div class='inner' x-data='window.blockAutoSave = AutoSave()'>
+        <div class='text-lg font-bold' style='margin-top: 0px'>Add details to your card</div>
+
+        <input type="text" name="block[title]" id="block_title" value="" placeholder="Add title"
+          class="w-full border-b p-2 pl-0 mt-3 outline-none focus:border-indigo-500" x-on:input="autoSave($el)" />
+
+        <div>
+          <div class='w-full' id="topics_selector"
+            x-data='Dropdown({autoSave: true, selected: [], parentComponent: &#39;window.blockAutoSave&#39;, search: {serializer: &#39;topicSelect&#39;, index: &#39;Topic_production&#39; }, filters: &#39;creator_id=1&#39;, name: &#39;topics&#39;})'
+            x-init='changeInputValue(true);'>
+
+            <select class='hidden' multiple name='block[topics][]' type='text' x-ref='originalInput'></select>
+            <div @click.away='open = false' class='mt-1 relative'>
+              <button :class='{&#39;&#39;: open}' @click='open = !open; $refs.searchInput.focus()'
+                class='outline-none relative pr-10 py-2 text-left cursor-default w-full border-b border-gray-300 text-sm'
+                tabindex='-1' type='button'>
+                <div class='flex items-center flex-wrap' x-ref='badgesContainer'>
+                  <template key='badge.value' x-for='badge in badges'>
+                    <!-- This is the Individual Chips -->
+                    <span
+                      class='m-1 ml-0 mr-2 inline-flex items-center px-2 py-0 5 rounded text-s font-medium border border-gray-200'
+                      x-text='badge.name'></span>
+                  </template>
+                  <input class='border-none m-1 ml-0 mt-2 outline-none' placeholder='Find or Create Topics...'
+                    style='width: auto; background: none' x-model='search'
+                    x-on:focus='asyncSearch( search || &#39;&#39;)' x-on:input='filter()'
+                    x-on:keyDown='searchOnChange($event)' x-ref='searchInput'>
+                </div>
+                <span class='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none hidden'>
+                  <svg aria-hidden='true' class='h-5 w-5 text-gray-400' fill='currentColor' viewbox='0 0 20 20'
+                    xmlns='http://www.w3.org/2000/svg'>
+                    <path clip-rule='evenodd'
+                      d='M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z'
+                      fill-rule='evenodd'></path>
+                  </svg>
+                </span>
+              </button>
+              <div class='absolute mt-1 w-full rounded-md bg-white shadow-lg transition ease-in duration-100 z-10'
+                x-show='open'>
+                <ul
+                  class='rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'>
+                  <template key='option' x-for='option in searchOptions'>
+                    <li
+                      :class='{&#39;border-gray-200&#39;: badges.find(b =&gt; b.name == option.name), &#39;bg-gray-200&#39;: highlighted == option}'
+                      @click='highlighted = option; submitInput();'
+                      class='text-xs mt-1 text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-gray-100'>
+                      <div class='flex items-center w-full justify-between'>
+                        <div class='flex'>
+                          <span class='font-normal block truncate text-base' x-text='option.name'></span>
+                          <span class='text-gray-600 flex items-center pl-2'
+                            x-show='badges.find(b =&gt; b.name == option.name)'>
+                            <svg aria-hidden='true' class='h-5 w-5' fill='currentColor' viewbox='0 0 20 20'
+                              xmlns='http://www.w3.org/2000/svg'>
+                              <path clip-rule='evenodd'
+                                d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                                fill-rule='evenodd'></path>
+                            </svg>
+                          </span>
+                        </div>
+                        <div class='inline-flex items-center mr-2'>
+                          <template x-if='option.badges &amp;&amp; option.badges.length'>
+                            <template x-for='badge in option.badges' x-key='badge'>
+                              <span
+                                class='m-1 inline-flex items-center px-2 py-0 5 rounded text-xs font-medium bg-gray-300 text-gray-800'
+                                x-text='badge'></span>
+                            </template>
+                          </template>
+                        </div>
+                      </div>
+                    </li>
+                  </template>
+                  <li :class='{&#39;bg-gray-200&#39;: createHighlighted}'
+                    @click='highlighted = null; assignSelected(search)'
+                    class='border-t mt-1 text-gray-900 cursor-pointer select-none relative py-3 pl-3 pr-9 hover:bg-gray-100'
+                    x-show='search'>
+                    <div class='flex items-center w-full justify-between'>
+                      <span class='font-normal block truncate text-base'>
+                        + Create new topic for <span class="font-bold" x-text="search"></span>
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class='mb-2'>
+          <div class='w-full' id="people_selector"
+            x-data='Dropdown({autoSave: true, selected: [], parentComponent: &#39;window.blockAutoSave&#39;, search: {serializer: &#39;personSelect&#39;, index: &#39;Person_production&#39; }, filters: &#39;&#39;, name: &#39;people&#39;})'
+            x-init='changeInputValue(true);'
+            >
+            <select class='hidden' multiple name='block[people][]' type='text' x-ref='originalInput'></select>
+            <div @click.away='open = false' class='mt-1 relative'>
+              <button :class='{&#39;&#39;: open}' @click='open = !open; $refs.searchInput.focus()'
+                class='outline-none relative pr-10 py-2 text-left cursor-default w-full border-b border-gray-300 text-sm'
+                tabindex='-1' type='button'>
+                <div class='flex items-center flex-wrap' x-ref='badgesContainer'>
+                  <template key='badge.value' x-for='badge in badges'>
+                    <span
+                      class='m-1 ml-0 mr-2 inline-flex items-center px-2 py-0 5 rounded text-s font-medium border border-gray-200'
+                      x-text='badge.name'></span>
+                  </template>
+                  <input class='border-none m-1 ml-0 mt-2 outline-none' placeholder='Find or Create People...'
+                    style='width: auto; background: none' x-model='search'
+                    x-on:focus='asyncSearch( search || &#39;&#39;)' x-on:input='filter()'
+                    x-on:keyDown='searchOnChange($event)' x-ref='searchInput'>
+                </div>
+                <span class='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none hidden'>
+                  <svg aria-hidden='true' class='h-5 w-5 text-gray-400' fill='currentColor' viewbox='0 0 20 20'
+                    xmlns='http://www.w3.org/2000/svg'>
+                    <path clip-rule='evenodd'
+                      d='M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z'
+                      fill-rule='evenodd'></path>
+                  </svg>
+                </span>
+              </button>
+              <div class='absolute mt-1 w-full rounded-md bg-white shadow-lg transition ease-in duration-100 z-10'
+                x-show='open'>
+                <ul
+                  class='rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'>
+                  <template key='option' x-for='option in searchOptions'>
+                    <li
+                      :class='{&#39;border-gray-200&#39;: badges.find(b =&gt; b.name == option.name), &#39;bg-gray-200&#39;: highlighted == option}'
+                      @click='highlighted = option; submitInput()'
+                      class='text-xs mt-1 text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-gray-100'>
+                      <div class='flex items-center w-full justify-between'>
+                        <div class='flex'>
+                          <span class='font-normal block truncate text-base' x-text='option.name'></span>
+                          <span class='text-gray-600 flex items-center pl-2'
+                            x-show='badges.find(b =&gt; b.name == option.name)'>
+                            <svg aria-hidden='true' class='h-5 w-5' fill='currentColor' viewbox='0 0 20 20'
+                              xmlns='http://www.w3.org/2000/svg'>
+                              <path clip-rule='evenodd'
+                                d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                                fill-rule='evenodd'></path>
+                            </svg>
+                          </span>
+                        </div>
+                        <div class='inline-flex items-center mr-2'>
+                          <template x-if='option.badges &amp;&amp; option.badges.length'>
+                            <template x-for='badge in option.badges' x-key='badge'>
+                              <span
+                                class='m-1 inline-flex items-center px-2 py-0 5 rounded text-xs font-medium bg-gray-300 text-gray-800'
+                                x-text='badge'></span>
+                            </template>
+                          </template>
+                        </div>
+                      </div>
+                    </li>
+                  </template>
+                  <li :class='{&#39;bg-gray-200&#39;: createHighlighted}'
+                    @click='highlighted = null; assignSelected(search)'
+                    class='border-t mt-1 text-gray-900 cursor-pointer select-none relative py-3 pl-3 pr-9 hover:bg-gray-100'
+                    x-show='search'>
+                    <div class='flex items-center w-full justify-between'>
+                      <span class='font-normal block truncate text-base'>
+                        + Create new person for <span class="font-bold" x-text="search"></span>
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <input type="hidden" name="api_key" id="api_key" value="93eda65a6863f02c99cef8e11dd211ebce59c88d" />
+        <div class='field mt3' x-data='{on: false}' id="read_status_checkbox">
+          <div @click='on = !on; blockAutoSave.autoSave(window.blockAutoSave.$el); console.log("fffff")' class='flex items-center space-x-3'>
+            <span :class='{&#39;bg-indigo-600&#39;: on, &#39;bg-gray-200&#39;: !on}'
+              class='bg-gray-200 relative inline-flex flex-shrink-0 h-6 w-12 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline'>
+              <!-- On: "translate-x-5", Off: "translate-x-0" -->
+              <span :class='{&#39;translate-x-6&#39;: on, &#39;translate-x-0&#39;: !on}'
+                class='translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200'></span>
+              <input class='hidden' name='block[read]' type='checkbox' x-bind:checked='on'>
+            </span>
+            <span class='cursor-pointer' id='toggleLabel'>
+              <span class='text-sm leading-5 font-medium text-gray-900'>
+                <em-span data-chunk="cnk_585b90680fc3f5c4e9dd" data-chunk-editable="true"
+                  data-chunk-type="single_line_text" data-chunk-cache-id="read_this_block_form"
+                  data-chunk-content-key="read_this_block_form">I've read this</em-span>
+              </span>
+            </span>
+          </div>
+        </div>
+        <div class='pt3'>
+          <textarea name="block[owner_comment][content]" id="block_owner_comment_content"
+            placeholder="Add a note/comment" class="w-full border-b mt-2 p-2 h-32"
+            x-on:input="autoSave($el)"></textarea>
+        </div>
+        <div class='py-2 flex items-center text-gray-700 text-sm font-medium opacity-0' id='autoSaveLabel'>
+          <span>Auto saving</span>
+          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24"
+            version="1.1" id="L9" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0"
+            xml:space="preserve" class="h-5 w-5 ml-2" fill="currentColor">
+            <path fill="currentColor"
+              d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50">
+              <animateTransform attributeName="transform" attributeType="XML" type="rotate" dur="1s" from="0 50 50"
+                to="360 50 50" repeatCount="indefinite"></animateTransform>
+            </path>
+          </svg>
+
+        </div>
+        <div class='pt-2 flex items-center w-full justify-end'>
+          <div class='w-1/2 px-2'>
+            <input type="button" name="commit" value="Save" onClick="onSubmitData();"
+              class="w-full inline-flex items-center justify-center px-3 py-3 border border-transparent leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              style="border-radius: 0.25rem;" data-disable-with="Save" />
+          </div>
+        </div>
+      </div>
+    </form>
+    <style>
+      #block_title::placeholder,
+      [x-ref="badgesContainer"] ::placeholder {
+        color: #718096;
+        opacity: 1;
+        font-size: 13px;
+      }
+    </style>
+  </div>
+
+  <script>
+
+	
+  const API_KEY = "93eda65a6863f02c99cef8e11dd211ebce59c88d";
+	let titleElement = document.getElementById('block_title');
+	let noteElement = document.getElementById('block_owner_comment_content');
+  let readCheck = document.getElementById('read_status_checkbox');
+  let topicSelector = document.getElementById('topics_selector');
+  let peopleSelector = document.getElementById('people_selector');
+
+  const generatePayload = () => {
+    return {
+        'title': titleElement.value,
+        'topics': eval(topicSelector.attributes['x-data'].value).badges.map((e) => e.name),
+        'people': eval(peopleSelector.attributes['x-data'].value).badges.map((e) => e.name),
+        'read': (readCheck.attributes['x-data'].value === '{on:true}'),
+        'notes': noteElement.value,
+    };
+  }
+
+
+
+	const onSubmitData = async () => {
+		console.log('Submitting...');
+		setTimeout(() => {
+			console.log("Submitted!");
+		}, 1000);
+	}
+
+	const autoFillData = (payload) => {
+    console.log('AutoFilling');
+		titleElement.value = payload['title'];
+		noteElement.value = payload['notes'];
+    readCheck.setAttribute('x-data', `{on:${payload['read'].toString()}}`);
+
+    // Populate the TopicSelector
+    let topics = payload['topics'].map((e)=>`'${e}'`).join(', ');
+    topicSelector.setAttribute('x-data', topicSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[topics]}]`));
+
+    // Populate the PeopleSelector
+    let people = payload['people'].map((e)=>`'${e}'`).join(', ');
+    peopleSelector.setAttribute('x-data', peopleSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[people]}]`));
+	}
+
+	const saveToAtlasQueue = async (url) => {
+		console.log("Saving To Atlas Queue");
+		console.log('URL: ' + url);
+		//Dummy APIRequest
+		setTimeout(() => {
+			console.log("Saved to Queue!");
+      autoFillData({
+        'title': 'Dogecoin To the Moon',
+        'topics': ['Crypto', 'Doge', 'Dogecoin', 'Shiba Inu'],
+        'people': ['Shibetoshi Nakamoto', 'Elon Musk', 'Satoshi Nakamoto'],
+        'read': true,
+        'notes': 'The World will transition to DOGECOIN & DOGECOIN ONLY!!!!',
+      });
+		}, 1000);
+	}
+
+
+  // Calling the SaveToAtlasQueue in the End
+  saveToAtlasQueue('dddd');
+  </script>
+
+  <script src="./autosave.js"></script>
+  <script src="./dropdown.js"></script>
+</body>
+
+</html>
