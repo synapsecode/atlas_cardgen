@@ -41,15 +41,31 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
 
 
 async function handleRequest(request) {
-	// Parse the RequestURL to get APIKey & URL
-	let params = request.url.split('?').splice(1);
-
-	if(params.length != 2){
-		return new Response("Invalid URL Format. Please include the 'api_key' & the 'url' search parameters");
+	let requrl = request.url.split('?');
+	if(requrl.length < 2){
+		return new Response("Invalid URL Format. Please include the 'api_key' & the 'url' query parameters");
 	}
+	// Parse the RequestURL to get APIKey & URL
+	let params = (function(a) {
+		if (a == "") return {};
+		var b = {};
+		for (var i = 0; i < a.length; ++i)
+		{
+			var p=a[i].split('=', 2);
+			if (p.length == 1)
+				b[p[0]] = "";
+			else
+				b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+		}
+		return b;
+	})(requrl[1].split('&'));
 
-	let apiKey = params[0].split('=')[1];
-	let URL = params[1].split('=')[1];
+	let apiKey = params['api_key'];
+	let URL = params['url'];
+
+	if(apiKey === undefined || URL === undefined){
+		return new Response("Invalid URL Format. Please include the 'api_key' & the 'url' query parameters");
+	}
 	
 	return new Response(
 		await generateHTMLFromGithubCode({
