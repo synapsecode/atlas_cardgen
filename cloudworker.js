@@ -1,9 +1,21 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
+const useGeneratedHTML = true;
 
 async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
-	// Cleans up the URL
-	const sanitizeURL = (raw) => {
-		return raw;
+
+	// Using a pre-generated HTML Code for Fast Access
+	if(useGeneratedHTML){
+		let htmlGeneratedCode = await (await fetch(sourceRootURL + 'generated.html')).text()
+		htmlGeneratedCode.replace(
+			// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
+			'http://example.com/',
+			sanitizeURL(recievedURL),
+		).replaceAll(
+			// Replacing the Placeholder with the users API Key
+			'<API_KEY_PLACEHOLDER>',
+			api_key,
+		)
+		return htmlTransformedCode;
 	}
 	
 	// Get all the Required Source Code from Github

@@ -1,0 +1,676 @@
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Atlas CardGen</title>
+
+	<!-- CSS Styles -->
+	<style>
+		#block_title::placeholder,  
+		[x-ref="badgesContainer"] ::placeholder {
+			color: #718096;
+			opacity: 1;
+			font-size: 13px;
+		}
+	</style>
+
+	<!-- ======================================CDN LINKS========================================= -->
+
+	<!-- TailwindCSS (2.0.4)-->
+	<link href='https://unpkg.com/tailwindcss@2.0.4/dist/tailwind.min.css' rel='stylesheet'>
+	<!-- AlpineJS (2.3.5) -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/2.3.5/alpine.js" integrity="sha512-MF55BI9HWsrGm7fyHye57RYohxQNzMBq5HMipUlFubeAzZ1TUPxmQikcxxBdTZ2Zuwza+1JuXCGNtvn4S8Fq0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<!--Algolia Search (4.5.1) & InstantSearch (4.8.3)-->
+	<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4.5.1/dist/algoliasearch-lite.umd.js" integrity="sha256-EXPXz4W6pQgfYY3yTpnDa3OH8/EPn16ciVsPQ/ypsjk=" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/instantsearch.js@4.8.3/dist/instantsearch.production.min.js" integrity="sha256-LAGhRRdtVoD6RLo2qDQsU2mp+XVSciKRC8XPOBWmofM=" crossorigin="anonymous"></script>
+
+	<!--Old iFrame Source Code-->
+	<!--<script src="https://atlas.fm/assets/iframe-d8a4fd5c554ef1e81e63b6cbe3b9ea1ccec4c019601eab6e6a8600a42f62ca47.js"></script>-->
+
+	<!-- ======================================CDN LINKS========================================= -->
+</head>
+<body>
+	<!-- The body of Atlas Cardgem -->
+	<div class='p-4 bg-white' id='block-form'>
+		<form class="simple-form bg-white" accept-charset="UTF-8" data-remote="true">
+			<!-- Hidden Inputs (FlagForRemoval) -->
+			<input name="utf8" type="hidden" value="&#x2713;"/>
+			<input type="hidden" name="_method" value="patch" />
+			<!-- ------------------------------ -->
+
+			<!-- The AtlasForm UI -->
+			<div class='inner' x-data='window.blockAutoSave = AutoSave()'>
+
+				<!-- The 'Add Details to your card' label -->
+				<div class='text-lg font-bold' style='margin-top: 0px'>Add details to your card</div>
+			
+				<!-- The Title TextField -->
+				<input 
+					type="text" name="block[title]" id="block_title"
+					value="" placeholder="Add title"
+					class="w-full border-b p-2 pl-0 mt-3 outline-none focus:border-indigo-500" 
+					x-on:input="autoSave($el)" />
+
+
+				<!-- The TopicSelector Field -->
+				<div class="topicselector_holder">
+					<!-- The Actual Topic MultiSelect Field -->
+					<div 
+						class='w-full' id="topics_selector"
+						x-data='Dropdown({
+							autoSave: true, 
+							selected: [], 
+							parentComponent: &#39;window.blockAutoSave&#39;, 
+							search: {serializer: &#39;topicSelect&#39;}, 
+							filters: &#39;creator_id=1&#39;, 
+							name: &#39;topic&#39;
+						})'
+						x-init='changeInputValue(true);'>
+
+						<!-- Hidden Select Field (AtlasInternalWorkings)-->
+						<select class='hidden' multiple name='block[people][]' type='text' x-ref='originalInput'></select>
+						<!-- Clicking Away, Closes the Suggestions -->
+						<div @click.away='open = false' class='mt-1 relative'>
+							<!-- A ClickTarget? (AtlasInternalWorkings) -->
+							<button 
+								:class='{&#39;&#39;: open}' @click='open = !open; $refs.searchInput.focus()'
+								class='outline-none relative pr-10 py-2 text-left cursor-default w-full border-b border-gray-300 text-sm'
+								tabindex='-1' type='button'>
+							
+								<!-- The Holder for all the Chips(Badges) & TextInputField-->
+								<div class='flex items-center flex-wrap' x-ref='badgesContainer'>
+									<!-- HTML Template Tag to be used as forloop on badges -->
+									<template key='badge.value' x-for='badge in badges'>
+										<!-- The Actual Chip Widget -->
+										<span
+											class='m-1 ml-0 mr-2 inline-flex items-center px-2 py-0 5 rounded text-s font-medium border border-gray-200 topictag'
+											x-text='badge.name'></span>
+									</template>
+									<!-- The Actual HTMLInputField for TopicSelector -->
+									<input 
+										class='border-none m-1 ml-0 mt-2 outline-none' 
+										placeholder='Find or Create Topics...'
+										style='width: auto; background: none' x-model='search'
+										x-on:focus='asyncSearch( search || &#39;&#39;)' x-on:input='filter()'
+										x-on:keyDown='searchOnChange($event)' x-ref='searchInput'>
+								</div>
+								<!-- A Random SVG (FlagForRemoval) -->
+								<span class='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none hidden'>
+									<svg aria-hidden='true' class='h-5 w-5 text-gray-400' fill='currentColor' viewbox='0 0 20 20'
+										xmlns='http://www.w3.org/2000/svg'>
+										<path clip-rule='evenodd'
+										d='M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z'
+										fill-rule='evenodd'></path>
+									</svg>
+								</span>
+							</button>
+							<!-- The Dropdown Section of the Field -->
+							<div 
+								class='absolute mt-1 w-full rounded-md bg-white shadow-lg transition ease-in duration-100 z-10'
+								x-show='open'>
+								<ul class='rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'>
+									<!-- HTML Template used as forloop over searchOptions <comes from DropDown> -->
+									<template key='option' x-for='option in searchOptions'>
+										<!-- This is the Markup for Each Suggestion -->
+										<li :class='{&#39;border-gray-200&#39;: badges.find(b =&gt; b.name == option.name), &#39;bg-gray-200&#39;: highlighted == option}'
+											@click='highlighted = option; submitInput();'
+											class='text-xs mt-1 text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-gray-100'>
+
+											<div class='flex items-center w-full justify-between'>
+												<div class='flex'>
+													<!-- The Actual Suggestion Label -->
+													<span class='font-normal block truncate text-base' x-text='option.name'></span>
+													<!-- The Tick Mark to show if Suggestion has already been selected -->
+													<span class='text-gray-600 flex items-center pl-2' x-show='badges.find(b =&gt; b.name == option.name)'>
+														<svg aria-hidden='true' class='h-5 w-5' fill='currentColor' viewbox='0 0 20 20'
+															xmlns='http://www.w3.org/2000/svg'>
+															<path clip-rule='evenodd'
+															d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+															fill-rule='evenodd'></path>
+														</svg>
+													</span>
+												</div>
+												<div class='inline-flex items-center mr-2'>
+													<!-- The Count of how many cards have the particular topic suggestion -->
+													<template x-if='option.badges &amp;&amp; option.badges.length'>
+														<template x-for='badge in option.badges' x-key='badge'>
+															<span
+															class='m-1 inline-flex items-center px-2 py-0 5 rounded text-xs font-medium bg-gray-300 text-gray-800'
+															x-text='badge'></span>
+														</template>
+													</template>
+												</div>
+											</div>
+										</li>
+									</template>
+									<!-- The 'Create New Topic' button (Shown when no suggestions match search) -->
+									<li :class='{&#39;bg-gray-200&#39;: createHighlighted}'
+										@click='highlighted = null; assignSelected(search)'
+										class='border-t mt-1 text-gray-900 cursor-pointer select-none relative py-3 pl-3 pr-9 hover:bg-gray-100'
+										x-show='search'>
+										<div class='flex items-center w-full justify-between'>
+											<span class='font-normal block truncate text-base'>
+												+ Create new topic for <span class="font-bold" x-text="search"></span>
+											</span>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<!-- The People Selector Field -->
+				<div class="peopleselector_holder mb-2">
+					<div 
+						class='w-full' id="people_selector"
+						x-data='Dropdown({
+							autoSave: true, 
+							selected: [], 
+							parentComponent: &#39;window.blockAutoSave&#39;, 
+							search: {serializer: &#39;personSelect&#39;}, 
+							filters: &#39;&#39;, 
+							name: &#39;people&#39;
+						})'
+						x-init='changeInputValue(true);'>
+
+						<!-- Hidden Select Field (AtlasInternalWorkings)-->
+						<select class='hidden' multiple name='block[people][]' type='text' x-ref='originalInput'></select>
+						<!-- Clicking Away, Closes the Suggestions -->
+						<div @click.away='open = false' class='mt-1 relative'>
+							<!-- A ClickTarget? (AtlasInternalWorkings) -->
+							<button 
+								:class='{&#39;&#39;: open}' @click='open = !open; $refs.searchInput.focus()'
+								class='outline-none relative pr-10 py-2 text-left cursor-default w-full border-b border-gray-300 text-sm'
+								tabindex='-1' type='button'>
+
+								<!-- The Holder for all the Chips(Badges) & TextInputField-->
+								<div class='flex items-center flex-wrap' x-ref='badgesContainer'>
+									<!-- HTML Template Tag to be used as forloop on badges -->
+									<template key='badge.value' x-for='badge in badges'>
+										<!-- The Actual Chip Widget -->
+										<span
+											class='m-1 ml-0 mr-2 inline-flex items-center px-2 py-0 5 rounded text-s font-medium border border-gray-200 peopletag'
+											x-text='badge.name'></span>
+									</template>
+									<!-- The Actual HTMLInputField for TopicSelector -->
+									<input 
+										class='border-none m-1 ml-0 mt-2 outline-none' 
+										placeholder='Find or Create People...'
+										style='width: auto; background: none' x-model='search'
+										x-on:focus='asyncSearch( search || &#39;&#39;)' x-on:input='filter()'
+										x-on:keyDown='searchOnChange($event)' x-ref='searchInput'>
+								</div>
+								<!-- A Random SVG (FlagForRemoval) -->
+								<span class='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none hidden'>
+									<svg aria-hidden='true' class='h-5 w-5 text-gray-400' fill='currentColor' viewbox='0 0 20 20'
+									xmlns='http://www.w3.org/2000/svg'>
+									<path clip-rule='evenodd'
+										d='M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z'
+										fill-rule='evenodd'></path>
+									</svg>
+								</span>
+							</button>
+
+							<!-- The Dropdown Section of the Field -->
+							<div 
+								class='absolute mt-1 w-full rounded-md bg-white shadow-lg transition ease-in duration-100 z-10'
+								x-show='open'>
+
+								<ul class='rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm'>
+									<!-- HTML Template used as forloop over searchOptions <comes from DropDown> -->
+									<template key='option' x-for='option in searchOptions'>
+										<!-- This is the Markup for Each Suggestion -->
+										<li
+											:class='{&#39;border-gray-200&#39;: badges.find(b =&gt; b.name == option.name), &#39;bg-gray-200&#39;: highlighted == option}'
+											@click='highlighted = option; submitInput()'
+											class='text-xs mt-1 text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-gray-100'>
+
+											<div class='flex items-center w-full justify-between'>
+												<div class='flex'>
+													<!-- The Actual Suggestion label -->
+													<span class='font-normal block truncate text-base' x-text='option.name'></span>
+													<!-- The Tick Mark to show if Suggestion has already been selected -->
+													<span class='text-gray-600 flex items-center pl-2'
+														x-show='badges.find(b =&gt; b.name == option.name)'>
+														<svg aria-hidden='true' class='h-5 w-5' fill='currentColor' viewbox='0 0 20 20'
+														xmlns='http://www.w3.org/2000/svg'>
+														<path clip-rule='evenodd'
+															d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+															fill-rule='evenodd'></path>
+														</svg>
+													</span>
+												</div>
+												<!-- (FlagForRemoval) -->
+												<div class='inline-flex items-center mr-2'>
+													<!-- The Count of how many cards have the particular topic suggestion -->
+													<template x-if='option.badges &amp;&amp; option.badges.length'>
+														<template x-for='badge in option.badges' x-key='badge'>
+														<span
+															class='m-1 inline-flex items-center px-2 py-0 5 rounded text-xs font-medium bg-gray-300 text-gray-800'
+															x-text='badge'></span>
+														</template>
+													</template>
+												</div>
+											</div>
+										</li>
+									</template>
+									<!-- The 'Create New Person' button (Shown when no suggestions match search) -->
+									<li :class='{&#39;bg-gray-200&#39;: createHighlighted}'
+										@click='highlighted = null; assignSelected(search)'
+										class='border-t mt-1 text-gray-900 cursor-pointer select-none relative py-3 pl-3 pr-9 hover:bg-gray-100'
+										x-show='search'>
+										<div class='flex items-center w-full justify-between'>
+											<span class='font-normal block truncate text-base'>
+												+ Create new person for <span class="font-bold" x-text="search"></span>
+											</span>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<!-- The Hidden API_KEY Field -->
+				<input type="hidden" name="api_key" id="api_key" value="<API_KEY_PLACEHOLDER>" />
+
+
+				<!-- The Already Read Switch -->
+				<div class='field mt3' x-data='{on: false}' id="readstatus">
+					<div @click='on = !on; blockAutoSave.autoSave(window.blockAutoSave.$el);' class='flex items-center space-x-3'>
+						<span 
+							:class='{&#39;bg-indigo-600&#39;: on, &#39;bg-gray-200&#39;: !on}'
+							class='bg-gray-200 relative inline-flex flex-shrink-0 h-6 w-12 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:shadow-outline'>
+							<!-- On: "translate-x-5", Off: "translate-x-0" -->
+							<span 
+								:class='{&#39;translate-x-6&#39;: on, &#39;translate-x-0&#39;: !on}'
+								class='translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform transition ease-in-out duration-200'>
+							</span>
+							<!-- Hidden Checkbox that exposes the value of the Switch using ID:rschk  -->
+							<input class='hidden' name='block[read]' type='checkbox' x-bind:checked='on' id="rschk">
+						</span>
+						<span class='cursor-pointer' id='toggleLabel'>
+							<span class='text-sm leading-5 font-medium text-gray-900'>
+								<em-span data-chunk="cnk_585b90680fc3f5c4e9dd" data-chunk-editable="true"
+								data-chunk-type="single_line_text" data-chunk-cache-id="read_this_block_form"
+								data-chunk-content-key="read_this_block_form">I've read this</em-span>
+							</span>
+						</span>
+					</div>
+				</div>
+
+
+				<!-- The Add Note/Comment Field -->
+				<div class='pt3'>
+					<textarea 
+						name="block[owner_comment][content]" id="block_owner_comment_content"
+						placeholder="Add a note/comment" class="w-full border-b mt-2 p-2 h-32"
+						x-on:input="autoSave($el)">
+					</textarea>
+				</div>
+
+
+				<!-- The AutoSaver Widget -->
+				<div class='py-2 flex items-center text-gray-700 text-sm font-medium opacity-0' id='autoSaveLabel'>
+					<span>Auto saving</span>
+					<!-- The AutoSave Circular Loader SVG -->
+					<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24" height="24"
+					version="1.1" id="L9" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0"
+					xml:space="preserve" class="h-5 w-5 ml-2" fill="currentColor">
+					<path fill="currentColor" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50">
+						<animateTransform 
+							attributeName="transform" attributeType="XML" type="rotate" dur="1s" from="0 50 50"
+							to="360 50 50" repeatCount="indefinite"
+						></animateTransform>
+					</path>
+					</svg>
+				</div>
+
+
+				<!-- The Save Button -->
+				<div class='pt-2 flex items-center w-full justify-end'>
+					<div class='w-1/2 px-2'>
+					<input type="button" name="commit" value="Save" onClick="onSubmitData();"
+						class="w-full inline-flex items-center justify-center px-3 py-3 border border-transparent leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+						style="border-radius: 0.25rem;" data-disable-with="Save" />
+					</div>
+				</div>
+
+			</div>
+		</form>
+	</div>
+
+
+	<!-- Custom Script To link everything -->
+	<script>
+		const API_KEY = "<API_KEY_PLACEHOLDER>";
+		let titleElement = document.getElementById('block_title');
+		let noteElement = document.getElementById('block_owner_comment_content');
+		let readCheck = document.getElementById('readstatus');
+		let readCheckBox = document.getElementById('rschk');
+		let topicSelector = document.getElementById('topics_selector');
+		let peopleSelector = document.getElementById('people_selector');
+		
+		const generatePayload = () => {
+			return {
+				'title': titleElement.value,
+				'topics': [...document.getElementsByClassName('topictag')].map((e)=>e.textContent),
+				'people': [...document.getElementsByClassName('peopletag')].map((e)=>e.textContent),
+				'read': readCheckBox.checked,
+				'notes': noteElement.value,
+			};
+		}
+		
+		const onSubmitData = async () => {
+			console.log('Submitting Payload...');
+			let payload = generatePayload();
+			console.log(payload);
+			setTimeout(() => {
+				console.log("Submitted!");
+			}, 1000);
+		}
+		
+		const autoFillData = (payload) => {
+				console.log('AutoFilling');
+			titleElement.value = payload['title'];
+			noteElement.value = payload['notes'];
+				readCheck.setAttribute('x-data', `{on:${payload['read'].toString()}}`);
+	
+			// Populate the TopicSelector
+			let topics = payload['topics'].map((e)=>`'${e}'`).join(', ');
+			topicSelector.setAttribute('x-data', topicSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[topics]}]`));
+		
+			// Populate the PeopleSelector
+			let people = payload['people'].map((e)=>`'${e}'`).join(', ');
+			peopleSelector.setAttribute('x-data', peopleSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[people]}]`));
+			}
+		
+			const saveToAtlasQueue = async (url) => {
+			console.log("Saving To Atlas Queue");
+			console.log('URL: ' + url);
+			//Dummy APIRequest
+			setTimeout(() => {
+				console.log("Saved to Queue!");
+				// DummyData but needs to come from QueueSaveRequestResponse
+				autoFillData({
+				'title': 'Dogecoin To the Moon!!',
+				'topics': ['Crypto', 'Doge', 'Dogecoin', 'Shiba Inu'],
+				'people': ['Shibetoshi Nakamoto', 'Elon Musk', 'Vitalik'],
+				'read': true,
+				'notes': 'Dogecoin is the future of currency!',
+				});
+			}, 1000);
+		}
+		
+		// Add AlogoliaSearchIndex to DrowdownField
+		const topic_search_index = 'Topic_production';
+		const people_search_index = 'Person_production';
+		let tsxdata = topicSelector.attributes['x-data'].value.replace("serializer: 'topicSelect'", `serializer: 'topicSelect', index: '${topic_search_index}'`)
+		let psxdata = peopleSelector.attributes['x-data'].value.replace("serializer: 'personSelect'", `serializer: 'personSelect', index: '${people_search_index}'`)
+		topicSelector.setAttribute('x-data', tsxdata);
+		peopleSelector.setAttribute('x-data', psxdata)
+		console.log('Embedded AlgoliaSearchIndex to DropDowns Successfully!')
+		
+		const createAlgoliaSearchObject = (type, value) => {
+			searchIndex = (type === 'topic') ? topic_search_index : people_search_index;
+			type = (type==='topic') ? 'Topic' : 'Person';
+			console.log(`Creating new ${type} (${value}) in AlgoliaSearch for SearchIndex(${searchIndex})`);
+			setTimeout(()=>{
+			console.log(`Created New ${type} (${value})`);
+			}, 1000);
+		}
+
+		// Calling the SaveToAtlasQueue
+		saveToAtlasQueue('http://example.com/'); //Replace with the required URL after Sanitization
+	</script>
+
+	<!--Script Fragments-->
+	<!--SearchJS Code-->
+<script>
+const Search = (token = {}) => {
+	return {
+		client: algoliasearch(token.appId, token.key),
+
+		find: async function (indexName, keyword, filters = "", serializer = null) {
+			const index = this.client.initIndex(indexName)
+			const request = index.search(keyword, {
+				filters: filters,
+				hitsPerPage: 6,
+				page: 0,
+			})
+
+			return await request.then(function searchDone(content) {
+				if (serializer) {
+					// console.log(content.hits)
+					return serializer(content.hits)
+				} else {
+					return content.hits
+				}
+			})
+		}
+	}
+};
+const SearchItemSerializer = {
+	topicSelect: function (data) {
+		return data.map(topic => {
+			return {
+				name: topic.name,
+				value: topic.name,
+				badges: [`${topic.block_count} Cards`]
+			}
+		})
+	},
+
+	personSelect: function (data) {
+		return data.map(person => {
+			return {
+				name: person.name,
+				value: person.identifier,
+				avatar: person.avatar,
+			}
+		})
+	}
+};
+</script>
+
+	<!--AutoSaveJS Code-->
+<script>
+window.AutoSave = () => {
+	return {
+		timer: null,
+		saving: false,
+
+		autoSave: function (el = null) {
+			if (this.timer) {
+				clearTimeout(this.timer)
+			}
+
+			this.timer = setTimeout(this.save.bind(null, el || this.$el), 3000);
+		},
+
+		save: function (form) {
+			const autoSaveLabel = form.querySelector('#autoSaveLabel');
+			const autoSaveParam = document.createElement('input')
+			autoSaveParam.classList.add('hidden')
+			autoSaveParam.name = 'auto_save'
+			autoSaveParam.type = "text"
+			autoSaveParam.value = true
+			form.prepend(autoSaveParam)
+			autoSaveLabel.classList.remove('opacity-0')
+			//-----------------------------------SUBMIT THE DATA TO API-----------------------------------
+			let payload = generatePayload();
+			// ServerRequest Goes here (use payload)
+			setTimeout(() => {
+				console.log('AutoSaved to Atlas Servers!');
+				// Removes AutoSave indicator
+				autoSaveLabel.classList.add('opacity-0')
+			}, 3000);
+			//-----------------------------------------------------------------------------------------------
+			autoSaveParam.remove()
+		}
+	}
+}
+</script>
+
+	<!--DropDownJS Code-->
+<script>
+// Alpine Dropdown Search - with algoliasearch
+window.Dropdown = (configs = { selected: [], autoSave: false, parentComponent: null, filters: "", name:''}) => {
+	const selected = configs.selected.map(d => tryParse(d))
+
+	function tryParse(data) {
+		try {
+			return JSON.parse(data)
+		} catch (err) {
+			if (typeof data == 'string') {
+				return { name: data, value: data }
+			} else if (Array.isArray(data)) {
+				return { name: data[1], value: data[0] }
+			}
+		}
+	}
+
+	return {
+		open: false,
+		search: "",
+		badges: selected,
+		searchOptions: [],
+		highlighted: null,
+		auto_save: configs.autoSave,
+		parentComponent: eval(configs.parentComponent),
+		filters: configs.filters,
+		createHighlighted: false,
+
+		assignSelected: function (val) {
+			this.search = val
+			this.submitInput()
+		},
+
+		changeInputValue: function (stopAutoSave = false) {
+			this.$refs.originalInput.innerHTML = ""
+			this.badges.forEach(badge => {
+				const option = document.createElement('option')
+				option.innerHTML = badge.name
+				option.value = badge.name
+				option.setAttribute('selected', true)
+
+				this.$refs.originalInput.appendChild(option)
+			})
+
+			if (this.auto_save && this.parentComponent && !stopAutoSave) this.parentComponent.autoSave(this.parentComponent.$el)
+		},
+
+		toggleBadge: function (badge) {
+			const index = this.badges.findIndex(b => b.name == badge.name)
+			if (index > -1) {
+				this.badges.splice(index, 1);
+			} else {
+				this.pushBadge(badge)
+			}
+
+			this.changeInputValue()
+			this.$refs.searchInput.focus()
+		},
+
+		submitInput: function (event = null) {
+			if (this.highlighted) {
+				if (event) event.preventDefault()
+				// console.log(configs.name + " :: PreviouslyExistingValue Added  -> ");
+;				this.toggleBadge(this.highlighted)
+			} else if (this.search && !this.badges.find(badge => badge.name == this.search)) {
+				if (event) event.preventDefault()
+				const newBadge = this.searchOptions.find(b => b.name == this.search) || { name: this.search, value: this.search }
+				// Create a new Object in Algolia
+				createAlgoliaSearchObject(configs.name, this.search);
+				this.pushBadge(newBadge)
+			}
+
+			this.changeInputValue()
+			this.search = ""
+			this.filter()
+			this.open = false
+			this.highlighted = null
+		},
+
+		pushBadge: function (badge) {
+			this.badges.push(badge);
+		},
+
+		removeBadge: function (event) {
+			this.badges.pop()
+			this.changeInputValue()
+		},
+
+		filter: function (keyword = this.search) {
+			this.open = true
+			this.createHighlighted = false
+			this.asyncSearch(keyword)
+		},
+
+		searchOnChange: function (event) {
+			if (event.key == "Backspace" && !this.search) {
+				this.removeBadge(event)
+			} else if (!this.search && event.key == "Tab") {
+				this.changeInputValue()
+				this.search = ""
+				this.filter()
+				this.open = false
+				this.highlighted = null
+			} else if (event.key == "Enter" || event.key == "Tab") {
+				if (!this.search && !this.open) return false
+				this.submitInput(event)
+			} else if (event.key == "ArrowDown") {
+				this.createHighlighted = false
+				if (this.highlighted) {
+					const index = this.searchOptions.indexOf(this.highlighted)
+					if ((index + 1) >= this.searchOptions.length) {
+						this.createHighlighted = true
+						this.highlighted = null
+					} else {
+						this.highlighted = this.searchOptions[index + 1]
+					}
+				} else {
+					this.highlighted = this.searchOptions[0]
+				}
+
+			} else if (event.key == "ArrowUp") {
+				this.createHighlighted = false
+				if (this.highlighted) {
+					const index = this.searchOptions.indexOf(this.highlighted)
+					if (index == 0) {
+						this.createHighlighted = true
+						this.highlighted = null
+					} else {
+						this.highlighted = this.searchOptions[index - 1]
+					}
+				} else {
+					this.highlighted = this.searchOptions[this.searchOptions.length - 1]
+				}
+			} else {
+
+			}
+
+			this.$refs.searchInput.focus()
+		},
+
+		asyncSearch: async function (keyword = "") {		
+			const search = Search({ appId: "AIGQMOA8F8", key: "44fa814eb0128fb014b901314d6683f6" })
+			const result = await search.find(configs.search.index, keyword, this.filters, SearchItemSerializer[configs.search.serializer])
+			this.searchOptions = result
+			if (result.length) {
+				this.highlighted = result[0]
+			} else {
+				this.createHighlighted = true
+				this.highlighted = null
+			}
+		}
+	}
+};
+</script>
+
+</body>
+</html>
