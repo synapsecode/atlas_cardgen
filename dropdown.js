@@ -64,7 +64,8 @@ window.Dropdown = (configs = { selected: [], autoSave: false, parentComponent: n
 			} else if (this.search && !this.badges.find(badge => badge.name == this.search)) {
 				if (event) event.preventDefault()
 				const newBadge = this.searchOptions.find(b => b.name == this.search) || { name: this.search, value: this.search }
-				// console.log("Creating NewEntry(" + configs.name + ") : " + this.search)
+				// Create a new Object in Algolia
+				createAlgoliaSearchObject(configs.name, this.search);
 				this.pushBadge(newBadge)
 			}
 
@@ -87,7 +88,6 @@ window.Dropdown = (configs = { selected: [], autoSave: false, parentComponent: n
 		filter: function (keyword = this.search) {
 			this.open = true
 			this.createHighlighted = false
-			console.log(keyword);
 			this.asyncSearch(keyword)
 		},
 

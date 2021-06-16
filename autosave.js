@@ -12,7 +12,7 @@ window.AutoSave = () => {
 		},
 
 		save: function (form) {
-			const autoSaveLabel = form.querySelector('#autoSaveLabel')
+			const autoSaveLabel = form.querySelector('#autoSaveLabel');
 			const autoSaveParam = document.createElement('input')
 			autoSaveParam.classList.add('hidden')
 			autoSaveParam.name = 'auto_save'
@@ -20,11 +20,14 @@ window.AutoSave = () => {
 			autoSaveParam.value = true
 			form.prepend(autoSaveParam)
 			autoSaveLabel.classList.remove('opacity-0')
-			//Rails.fire(form.closest('form'), 'submit')
-			//-----------------------------TODO: HANDLE RAILSFIRE @ASK-TONY-----------------------------------
-			console.log('Creating Object in Algolia');
-			//Fixed Permanant AutoSaveLoading
-			setTimeout(()=>autoSaveLabel.classList.add('opacity-0'), 3000);
+			//-----------------------------------SUBMIT THE DATA TO API-----------------------------------
+			let payload = generatePayload();
+			// ServerRequest Goes here (use payload)
+			setTimeout(() => {
+				console.log('AutoSaved to Atlas Servers!');
+				// Removes AutoSave indicator
+				autoSaveLabel.classList.add('opacity-0')
+			}, 3000);
 			//-----------------------------------------------------------------------------------------------
 			autoSaveParam.remove()
 		}
