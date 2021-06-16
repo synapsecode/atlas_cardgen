@@ -6,16 +6,16 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
 	// Using a pre-generated HTML Code for Fast Access
 	if(useGeneratedHTML){
 		let htmlGeneratedCode = await (await fetch(sourceRootURL + 'generated.html')).text()
-		htmlGeneratedCode.replace(
+		htmlGeneratedCode = htmlGeneratedCode.replace(
 			// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
 			'http://example.com/',
-			sanitizeURL(recievedURL),
+			recievedURL,
 		).replaceAll(
 			// Replacing the Placeholder with the users API Key
 			'<API_KEY_PLACEHOLDER>',
 			api_key,
 		)
-		return htmlTransformedCode;
+		return htmlGeneratedCode;
 	}
 	
 	// Get all the Required Source Code from Github
@@ -40,7 +40,7 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
 	).replace(
 		// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
 		'http://example.com/',
-		sanitizeURL(recievedURL),
+		recievedURL,
 	).replaceAll(
 		// Replacing the Placeholder with the users API Key
 		'<API_KEY_PLACEHOLDER>',
