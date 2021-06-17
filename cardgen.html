@@ -63,7 +63,7 @@
 							selected: [], 
 							parentComponent: &#39;window.blockAutoSave&#39;, 
 							search: {serializer: &#39;topicSelect&#39;}, 
-							filters: &#39;creator_id=1&#39;, 
+							filters: &#39;&#39;, 
 							name: &#39;topic&#39;
 						})'
 						x-init='changeInputValue(true);'>
@@ -347,13 +347,44 @@
 
 	<!-- Custom Script To link everything -->
 	<script>
+		//User Constnants
 		const API_KEY = "<API_KEY_PLACEHOLDER>";
+		const USER_CREATOR_ID = "<USER_CREATOR_ID>";
+
+		// The Page Elements
 		let titleElement = document.getElementById('block_title');
 		let noteElement = document.getElementById('block_owner_comment_content');
 		let readCheck = document.getElementById('readstatus');
 		let readCheckBox = document.getElementById('rschk');
 		let topicSelector = document.getElementById('topics_selector');
 		let peopleSelector = document.getElementById('people_selector');
+
+		const initialize = () => {
+			// Add AlogoliaSearchIndex to DrowdownField
+			const topic_search_index = 'Topic_production';
+			const people_search_index = 'Person_production';
+			let tsxdata = topicSelector.attributes['x-data'].value.replace(
+				"serializer: 'topicSelect'",
+				`serializer: 'topicSelect', index: '${topic_search_index}'`
+			)
+			let psxdata = peopleSelector.attributes['x-data'].value.replace(
+				"serializer: 'personSelect'", 
+				`serializer: 'personSelect', index: '${people_search_index}'`
+			)
+			topicSelector.setAttribute('x-data', tsxdata);
+			peopleSelector.setAttribute('x-data', psxdata)
+			console.log('Embedded AlgoliaSearchIndex to DropDowns Successfully!')
+
+			// Add CreatorID to Topics AlgoliaSearchDropdown
+			topicSelector.setAttribute(
+				'x-data',
+				tsxdata.replace(
+					"filters: ''",
+					`filters: 'creator_id=${USER_CREATOR_ID}'`
+				)
+			);
+
+		}
 	  
 		const generatePayload = () => {
 		  return {
@@ -370,28 +401,42 @@
 			let payload = generatePayload();
 			console.log(payload);
 			setTimeout(() => {
-				console.log("Submitted!");
+				const success = true;
+				// --------------- DO NOT REMOVE ----------------
+				// This console log, notifies the Atlas App that the Submission has been completed.
+				console.log(`[[AtlasApp:CardGenStatus]]::${success ? 'Successful' : 'Failure'}`);
+				// ----------------------------------------------
 			}, 1000);
 		}
 	  
 		const autoFillData = (payload) => {
-		  	console.log('AutoFilling');
 			titleElement.value = payload['title'];
 			noteElement.value = payload['notes'];
 		  	readCheck.setAttribute('x-data', `{on:${payload['read'].toString()}}`);
 	
 			// Populate the TopicSelector
 			let topics = payload['topics'].map((e)=>`'${e}'`).join(', ');
-			topicSelector.setAttribute('x-data', topicSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[topics]}]`));
+			topicSelector.setAttribute(
+				'x-data', topicSelector.attributes['x-data'].value.replaceAll(
+					"selected: []",
+					`selected: [${[topics]}]`
+				)
+			);
 		
 			// Populate the PeopleSelector
 			let people = payload['people'].map((e)=>`'${e}'`).join(', ');
-			peopleSelector.setAttribute('x-data', peopleSelector.attributes['x-data'].value.replaceAll("selected: []",`selected: [${[people]}]`));
+			peopleSelector.setAttribute(
+				'x-data', peopleSelector.attributes['x-data'].value.replaceAll(
+					"selected: []",
+					`selected: [${[people]}]`
+				)
+			);
 		  }
 	  
 		  const saveToAtlasQueue = async (url) => {
 			console.log("Saving To Atlas Queue");
 			console.log('URL: ' + url);
+			console.log('Using USER_API_KEY: ' + API_KEY)
 			//Dummy APIRequest
 			setTimeout(() => {
 				console.log("Saved to Queue!");
@@ -406,26 +451,20 @@
 			}, 1000);
 		}
 	  
-		// Add AlogoliaSearchIndex to DrowdownField
-		const topic_search_index = 'Topic_production';
-		const people_search_index = 'Person_production';
-		let tsxdata = topicSelector.attributes['x-data'].value.replace("serializer: 'topicSelect'", `serializer: 'topicSelect', index: '${topic_search_index}'`)
-		let psxdata = peopleSelector.attributes['x-data'].value.replace("serializer: 'personSelect'", `serializer: 'personSelect', index: '${people_search_index}'`)
-		topicSelector.setAttribute('x-data', tsxdata);
-		peopleSelector.setAttribute('x-data', psxdata)
-		console.log('Embedded AlgoliaSearchIndex to DropDowns Successfully!')
-	  
+		
 		const createAlgoliaSearchObject = (type, value) => {
 			searchIndex = (type === 'topic') ? topic_search_index : people_search_index;
 			type = (type==='topic') ? 'Topic' : 'Person';
 			console.log(`Creating new ${type} (${value}) in AlgoliaSearch for SearchIndex(${searchIndex})`);
 			setTimeout(()=>{
-			console.log(`Created New ${type} (${value})`);
+				console.log(`Created New ${type} (${value})`);
 			}, 1000);
 		}
 
+		// Initialize Everything
+		initialize();
 		// Calling the SaveToAtlasQueue
-		saveToAtlasQueue('http://example.com/'); //Replace with the required URL after Sanitization
+		saveToAtlasQueue('https://www.example.com/'); //Replace with the required URL after Sanitization
 		// Solving issue of weird space in noteElement
 		noteElement.value = "";
 	</script>

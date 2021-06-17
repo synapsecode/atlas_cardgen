@@ -1,20 +1,28 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
-const useGeneratedHTML = true;
+const useGeneratedHTML = false;
 
-async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
+const replaceHTML = (html, url, apikey, cid) => {
+	return html.replace(
+		// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
+		'https://www.example.com/',
+		url,
+	).replaceAll(
+		// Replacing the Placeholder with the users API Key
+		'<API_KEY_PLACEHOLDER>',
+		apikey,
+	).replaceAll(
+		//Replacing the Placeholder with the User Creator ID
+		'<USER_CREATOR_ID>',
+		cid
+	);
+}
+
+async function generateHTMLFromGithubCode ({api_key, recievedURL, cid}) {
 
 	// Using a pre-generated HTML Code for Fast Access
 	if(useGeneratedHTML){
 		let htmlGeneratedCode = await (await fetch(sourceRootURL + 'generated.html')).text()
-		htmlGeneratedCode = htmlGeneratedCode.replace(
-			// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
-			'http://example.com/',
-			recievedURL,
-		).replaceAll(
-			// Replacing the Placeholder with the users API Key
-			'<API_KEY_PLACEHOLDER>',
-			api_key,
-		)
+		htmlGeneratedCode = replaceHTML(htmlGeneratedCode, recievedURL, api_key, cid);
 		return htmlGeneratedCode;
 	}
 	
@@ -37,15 +45,10 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL,}) {
 		// Embedding the DropDownJSCode
 		'<script src="./dropdown.js"></script>',
 		`<!--DropDownJS Code-->\n<script>\n${dropdownJSCode}\n</script>\n`
-	).replace(
-		// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
-		'http://example.com/',
-		recievedURL,
-	).replaceAll(
-		// Replacing the Placeholder with the users API Key
-		'<API_KEY_PLACEHOLDER>',
-		api_key,
 	);
+
+	// Replacing the Constants in the HTML
+	htmlTransformedCode = replaceHTML(htmlTransformedCode, recievedURL, api_key, cid);
 
 	// console.log(htmlTransformedCode);
 	return htmlTransformedCode;
@@ -74,15 +77,17 @@ async function handleRequest(request) {
 
 	let apiKey = params['api_key'];
 	let URL = params['url'];
+	let creator_id = params['cid'];
 
-	if(apiKey === undefined || URL === undefined){
-		return new Response("Invalid URL Format. Please include the 'api_key' & the 'url' query parameters");
+	if(apiKey === undefined || URL === undefined || creator_id === undefined){
+		return new Response("Invalid URL Format. Please include the 'api_key', 'url' & 'cid' query parameters");
 	}
 	
 	return new Response(
 		await generateHTMLFromGithubCode({
 			recievedURL: URL,
 			api_key: apiKey,
+			cid: creator_id,
 		}), {
 		headers: {
 			"content-type": "text/html;charset=UTF-8",
