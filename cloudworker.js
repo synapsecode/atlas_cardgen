@@ -1,5 +1,5 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
-const useGeneratedHTML = false;
+const useGeneratedHTML = true;
 
 const replaceHTML = (html, url, apikey, cid) => {
 	return html.replace(
@@ -55,46 +55,56 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL, cid}) {
 }
 
 
+// This function performs certain operations in order to prevent errors
+// As urls that are added as a part of the original url can sometimes be difficult to parse
+const getRequiredURLParams = (url) => {
+    // Regex Matcher Code
+    let urlMatch = (/url=\((http[s]?:\/\/[^ ]*)\)/g).exec(url);
+    let apiKeyMatch = (/api_key=\w+/g).exec(url);
+    let cidURLMatch = (/cid=\d+/g).exec(url);
+
+    if(urlMatch !== null && apiKeyMatch !== null && cidURLMatch != null){
+        let inner_url = urlMatch[0].substring(5,urlMatch[0].length -1);
+        let api_key = apiKeyMatch[0].split('=')[1];
+        let cid = cidURLMatch[0].split('=')[1];
+        return [{ 'api_key': api_key, 'url': inner_url, 'cid': cid }, 'success'];
+    }else{
+        let nulls = [
+            (urlMatch === null) ? 'url' : '',
+            (apiKeyMatch === null) ? 'api_key' : '',
+            (cidURLMatch === null) ? 'cid' : '',
+        ].filter((e) => e!=='' );
+        return [null, `Please provide the following query parameters: ${nulls.join(', ')}`];
+    }
+}
+
+
 async function handleRequest(request) {
-	let requrl = request.url.split('?');
-	if(requrl.length < 2){
-		return new Response("Invalid URL Format. Please include the 'api_key' & the 'url' query parameters");
-	}
-	// Parse the RequestURL to get APIKey & URL
-	let params = (function(a) {
-		if (a == "") return {};
-		var b = {};
-		for (var i = 0; i < a.length; ++i)
-		{
-			var p=a[i].split('=', 2);
-			if (p.length == 1)
-				b[p[0]] = "";
-			else
-				b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
-		}
-		return b;
-	})(requrl[1].split('&'));
-
-	let apiKey = params['api_key'];
-	let URL = params['url'];
-	let creator_id = params['cid'];
-
-	if(apiKey === undefined || URL === undefined || creator_id === undefined){
-		return new Response("Invalid URL Format. Please include the 'api_key', 'url' & 'cid' query parameters");
-	}
-	
-	return new Response(
-		await generateHTMLFromGithubCode({
-			recievedURL: URL,
-			api_key: apiKey,
-			cid: creator_id,
-		}), {
-		headers: {
-			"content-type": "text/html;charset=UTF-8",
-		},
-	});
+    const sent_url = request.url;
+    let [params, msg] = getRequiredURLParams(sent_url);
+    if(params !== null){
+        let apiKey = params['api_key'];
+        let URL = params['url'];
+        let creator_id = params['cid'];
+        return new Response(
+            await generateHTMLFromGithubCode({
+                recievedURL: URL,
+                api_key: apiKey,
+                cid: creator_id,
+            }), {
+            headers: {
+                "content-type": "text/html;charset=UTF-8",
+            },
+        });
+    }else{
+        return new Response("Invalid URL Formatting: " + msg);
+    }
 }
 
 addEventListener("fetch", event => {
   return event.respondWith(handleRequest(event.request))
 })
+
+
+// Usage
+// https://atlasfm-cardgen.synapsecode.workers.dev/?url=(<YOUR_URL>)&api_key=<YOUR_API_KEY>&cid=<YOUR_CID>
