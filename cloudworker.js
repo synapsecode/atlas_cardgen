@@ -1,5 +1,5 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
-const useGeneratedHTML = false;
+const useGeneratedHTML = true;
 
 const replaceHTML = (html, url, apikey, cid) => {
 	return html.replace(
@@ -28,7 +28,7 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL, cid}) {
 	
 	// Get all the Required Source Code from Github
 	let htmlBaseCode = await (await fetch(sourceRootURL + 'cardgen.html')).text()
-	let backendJSCode = await (await fetch(sourceRootURL + 'backend.html')).text()
+	let backendJSCode = await (await fetch(sourceRootURL + 'backend.js')).text()
 	let searchJSCode = await (await fetch(sourceRootURL + 'search.js')).text()
 	let autosaveJSCode = await (await fetch(sourceRootURL + 'autosave.js')).text()
 	let dropdownJSCode = await (await fetch(sourceRootURL + 'dropdown.js')).text()
@@ -109,6 +109,7 @@ async function handleRequest(request) {
 addEventListener("fetch", event => {
   return event.respondWith(handleRequest(event.request))
 })
+
 
 
 // Usage
