@@ -21,10 +21,8 @@ window.AutoSave = () => {
 			form.prepend(autoSaveParam)
 			autoSaveLabel.classList.remove('opacity-0')
 			//-----------------------------------SUBMIT THE DATA TO API-----------------------------------
-			let payload = generatePayload();
-			// ServerRequest Goes here (use payload)
-			setTimeout(() => {
-				console.log('AutoSaved to Atlas Servers!');
+			Backend.autoSaveCardToAtlas();
+			setTimeout(() => {	
 				// Removes AutoSave indicator
 				autoSaveLabel.classList.add('opacity-0')
 			}, 3000);

@@ -334,7 +334,7 @@
 				<!-- The Save Button -->
 				<div class='pt-2 flex items-center w-full justify-end'>
 					<div class='w-1/2 px-2'>
-					<input type="button" name="commit" value="Save" onClick="onSubmitData();"
+					<input type="button" name="commit" value="Save" onClick="Backend.saveCardToAtlas();"
 						class="w-full inline-flex items-center justify-center px-3 py-3 border border-transparent leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 						style="border-radius: 0.25rem;" data-disable-with="Save" />
 					</div>
@@ -344,12 +344,14 @@
 		</form>
 	</div>
 
-
+	<!-- Import the backend Code -->
+	<script src="./backend.js"></script>
 	<!-- Custom Script To link everything -->
 	<script>
 		//User Constnants
 		const API_KEY = "<API_KEY_PLACEHOLDER>";
 		const USER_CREATOR_ID = "<USER_CREATOR_ID>";
+		const recievedURL = "<RECIEVED_URL>";
 
 		// The Page Elements
 		let titleElement = document.getElementById('block_title');
@@ -359,7 +361,16 @@
 		let topicSelector = document.getElementById('topics_selector');
 		let peopleSelector = document.getElementById('people_selector');
 
+		const sep = "-------------------------------------------------------\n";
+
 		const initialize = () => {
+			console.log(sep)
+			console.log('[[AtlasCardGen]]:Initialize');
+			console.log('Using Recieved URL: ' + recievedURL);
+			console.log('Using API_KEY: ' + API_KEY);
+			console.log('Using CreatorID: ' + USER_CREATOR_ID);
+			
+
 			// Add AlogoliaSearchIndex to DrowdownField
 			const topic_search_index = 'Topic_production';
 			const people_search_index = 'Person_production';
@@ -373,7 +384,6 @@
 			)
 			topicSelector.setAttribute('x-data', tsxdata);
 			peopleSelector.setAttribute('x-data', psxdata)
-			console.log('Embedded AlgoliaSearchIndex to DropDowns Successfully!')
 
 			// Add CreatorID to Topics AlgoliaSearchDropdown
 			topicSelector.setAttribute(
@@ -383,7 +393,8 @@
 					`filters: 'creator_id=${USER_CREATOR_ID}'`
 				)
 			);
-
+			console.log('Embedded AlgoliaSearchIndex to DropDowns Successfully!')
+			console.log(sep)
 		}
 	  
 		const generatePayload = () => {
@@ -395,76 +406,40 @@
 			  'notes': noteElement.value,
 		  };
 		}
-	  
-		const onSubmitData = async () => {
-			console.log('Submitting Payload...');
-			let payload = generatePayload();
-			console.log(payload);
-			setTimeout(() => {
-				const success = true;
-				// --------------- DO NOT REMOVE ----------------
-				// This console log, notifies the Atlas App that the Submission has been completed.
-				console.log(`[[AtlasApp:CardGenStatus]]::${success ? 'Successful' : 'Failure'}`);
-				// ----------------------------------------------
-			}, 1000);
-		}
+	 
 	  
 		const autoFillData = (payload) => {
+
+			const fillDropdowns = (el, key) => {
+				let data = payload[key].map((e)=>`'${e}'`).join(', ');
+				el.setAttribute(
+				'x-data', el.attributes['x-data'].value.replaceAll(
+					"selected: []",
+					`selected: [${[data]}]`
+				));
+			}
+
 			titleElement.value = payload['title'];
 			noteElement.value = payload['notes'];
 		  	readCheck.setAttribute('x-data', `{on:${payload['read'].toString()}}`);
-	
 			// Populate the TopicSelector
-			let topics = payload['topics'].map((e)=>`'${e}'`).join(', ');
-			topicSelector.setAttribute(
-				'x-data', topicSelector.attributes['x-data'].value.replaceAll(
-					"selected: []",
-					`selected: [${[topics]}]`
-				)
-			);
-		
+			fillDropdowns(topicSelector, 'topics');
 			// Populate the PeopleSelector
-			let people = payload['people'].map((e)=>`'${e}'`).join(', ');
-			peopleSelector.setAttribute(
-				'x-data', peopleSelector.attributes['x-data'].value.replaceAll(
-					"selected: []",
-					`selected: [${[people]}]`
-				)
-			);
+			fillDropdowns(peopleSelector, 'people');
 		  }
-	  
-		  const saveToAtlasQueue = async (url) => {
-			console.log("Saving To Atlas Queue");
-			console.log('URL: ' + url);
-			console.log('Using USER_API_KEY: ' + API_KEY)
-			//Dummy APIRequest
-			setTimeout(() => {
-				console.log("Saved to Queue!");
-				// DummyData but needs to come from QueueSaveRequestResponse
-				// autoFillData({
-				// 'title': 'Dogecoin To the Moon!!',
-				// 'topics': ['Crypto', 'Doge', 'Dogecoin', 'Shiba Inu'],
-				// 'people': ['Shibetoshi Nakamoto', 'Elon Musk', 'Vitalik'],
-				// 'read': true,
-				// 'notes': 'Dogecoin is the future of currency!',
-				// });
-			}, 1000);
-		}
-	  
 		
 		const createAlgoliaSearchObject = (type, value) => {
-			searchIndex = (type === 'topic') ? topic_search_index : people_search_index;
-			type = (type==='topic') ? 'Topic' : 'Person';
-			console.log(`Creating new ${type} (${value}) in AlgoliaSearch for SearchIndex(${searchIndex})`);
-			setTimeout(()=>{
-				console.log(`Created New ${type} (${value})`);
-			}, 1000);
+			if(type === 'topic'){
+				Backend.createNewTopic(value);
+			}else{
+				Backend.createNewPerson(value);
+			}
 		}
 
 		// Initialize Everything
 		initialize();
 		// Calling the SaveToAtlasQueue
-		saveToAtlasQueue('https://www.example.com/'); //Replace with the required URL after Sanitization
+		Backend.addToAtlasQueue(recievedURL); //Replace with the required URL after Sanitization
 		// Solving issue of weird space in noteElement
 		noteElement.value = "";
 	</script>

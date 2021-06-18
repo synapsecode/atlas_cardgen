@@ -1,10 +1,10 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
-const useGeneratedHTML = true;
+const useGeneratedHTML = false;
 
 const replaceHTML = (html, url, apikey, cid) => {
 	return html.replace(
 		// Replacing the ExampleURl with the URLRecieved from the Request to the Cloudflare worker
-		'https://www.example.com/',
+		'<RECIEVED_URL>',
 		url,
 	).replaceAll(
 		// Replacing the Placeholder with the users API Key
@@ -28,6 +28,7 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL, cid}) {
 	
 	// Get all the Required Source Code from Github
 	let htmlBaseCode = await (await fetch(sourceRootURL + 'cardgen.html')).text()
+	let backendJSCode = await (await fetch(sourceRootURL + 'backend.html')).text()
 	let searchJSCode = await (await fetch(sourceRootURL + 'search.js')).text()
 	let autosaveJSCode = await (await fetch(sourceRootURL + 'autosave.js')).text()
 	let dropdownJSCode = await (await fetch(sourceRootURL + 'dropdown.js')).text()
@@ -45,6 +46,10 @@ async function generateHTMLFromGithubCode ({api_key, recievedURL, cid}) {
 		// Embedding the DropDownJSCode
 		'<script src="./dropdown.js"></script>',
 		`<!--DropDownJS Code-->\n<script>\n${dropdownJSCode}\n</script>\n`
+	).replace(
+		// Embedding the DropDownJSCode
+		'<script src="./backend.js"></script>',
+		`<!--DropDownJS Code-->\n<script>\n${backendJSCode}\n</script>\n`
 	);
 
 	// Replacing the Constants in the HTML
