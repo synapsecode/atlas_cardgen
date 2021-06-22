@@ -1,4 +1,3 @@
-
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -277,7 +276,7 @@
 
 
 				<!-- The Hidden API_KEY Field -->
-				<input type="hidden" name="api_key" id="api_key" value="<API_KEY_PLACEHOLDER>" />
+				<input type="hidden" name="api_key" id="api_key" value="93eda65a6863f02c99cef8e11dd211ebce59c88d" />
 
 
 				<!-- The Already Read Switch -->
@@ -352,70 +351,86 @@ class Backend {
 
 	static atlasRoot = "https://atlas.fm/api/v1";
 
-	static addToAtlasQueue = async (url) => {
-		console.log('[Backend.addToQueue]');
-		console.log('Adding URL: (' + url + ') to the AtlasQueue');
-		setTimeout(() => {
-			console.log("Saved to Queue!");
-			// Replace with Autofill if addToQueue returns with data;
-			if(url === 'https://www.spacex.com/'){
-				autoFillData({
-					'title': 'Official SpaceX Website',
-					'topics': ['Space', 'Physics', 'Falcon 9', 'Falcon Heavy', 'Starship Superheavy'],
-					'people': ['Elon Musk', 'Gwynne Shotwell', 'John Insprucker'],
-					'read': true,
-					'notes': 'Take a look at the mesmerizing images on the SpaceX website!',
-				});
-			}
-			console.log(sep)
-		}, 1300);
-
-	}
-
-
 	static saveCardToAtlas = async () => {
 		console.log('[Backend.saveCardToAtlas]');
 		console.log('Submitting Payload:');
-		let payload = generatePayload();
-		console.log(payload);
-		setTimeout(() => {
-			const success = true;
-			// --------------- DO NOT REMOVE ----------------
-			// This console log, notifies the Atlas App that the Submission has been completed.
-			console.log(`[[AtlasApp:CardGenStatus]]::${success ? 'Successful' : 'Failure'}`);
-			// ----------------------------------------------
-			console.log(sep)
-		}, 1600);
+
+		await this.atlasCardGenRequest('save');
+		const success = true;
+		console.log(`[[AtlasApp:CardGenStatus]]::${success ? 'Successful' : 'Failure'}`);
+		console.log(sep)
+	}
+
+	static atlasCardGenRequest = async (mode) => {
+		let requestPayload = {};
+		if(mode === 'getcreate'){
+			requestPayload = {
+				'api_key': API_KEY,
+				'url':recievedURL,
+			};
+		}else if(mode === 'save'){
+			let pagePayload  = generatePayload();
+			// console.log(pagePayload);
+			requestPayload = {
+				'api_key': API_KEY,
+				'url':recievedURL,
+				"title": pagePayload['title'],
+				"topics": pagePayload['topics'],
+				"people": pagePayload['people'],
+				"read": pagePayload['read'] ? "on" : "off",
+				"note": pagePayload['notes']
+			};
+		}else{
+			console.error('Invalid AtlasCardGenRequestMode');
+			return;
+		}
+
+		// Upload Request
+		// console.log(requestPayload);
+		let response = await fetch(
+			'https://atlas.fm/api/v1/cards',
+			{
+				method: 'POST',
+				body: JSON.stringify(requestPayload),
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				}
+			}
+		);
+		response = await response.json();
+
+		let returnedData = {
+			'title': response['title'] ?? '',
+			'url': response['url'],
+			'notes': response['comment'] ?? '',
+			'topics': response['topics'].map((t) => t['name']),
+			'people': response['people'].map((p) => p['name']),
+			'read': ((response['read'] ?? 'off') === 'off') ? false : true,
+		};
+		// console.log(returnedData);
+		return returnedData;
 	}
 
 	static autoSaveCardToAtlas = async () => {
 		console.log('[Backend.autoSaveCardToAtlas]');
-		let payload = generatePayload();
-		// console.log(payload);
+		let returnedData = await this.atlasCardGenRequest('save');
+		// autoFillData(returnedData);
 		console.log('AutoSaved to Atlas Servers!');
 	}
 
+	static upsertToAtlas = async () => {
+		console.log('[Backend.upsertToAtlas]');
+		console.log('Adding URL: (' + recievedURL + ') to Atlas (Upsert)');
 
-	static createNewPerson = async (person) => {
-		console.log('[Backend.createNewPerson]');
-		console.log(`Creating new Person (${person}) in AlgoliaSearch`);
-		setTimeout(()=>{
-				console.log(`Created New Person (${person})`);
-				console.log(sep);
-		}, 1000);
-	}
-
-	static createNewTopic = async (topic) => {
-		console.log('[Backend.createNewTopic]');
-		console.log(`Creating new Topic (${topic}) in AlgoliaSearch`);
-		setTimeout(()=>{
-				console.log(`Created New Topic (${topic})`);
-				console.log(sep);
-		}, 1000);
+		let returnedData = await this.atlasCardGenRequest('getcreate');
+		autoFillData(returnedData);
+		console.log(sep);
 	}
 
 }
 </script>
+
 
 	<!-- Custom Script To link everything -->
 	<script>
@@ -500,17 +515,12 @@ class Backend {
 		  }
 		
 		const createAlgoliaSearchObject = (type, value) => {
-			if(type === 'topic'){
-				Backend.createNewTopic(value);
-			}else{
-				Backend.createNewPerson(value);
-			}
 		}
 
 		// Initialize Everything
 		initialize();
 		// Calling the SaveToAtlasQueue
-		Backend.addToAtlasQueue(recievedURL); //Replace with the required URL after Sanitization
+		Backend.upsertToAtlas(); //Replace with the required URL after Sanitization
 		// Solving issue of weird space in noteElement
 		noteElement.value = "";
 	</script>
