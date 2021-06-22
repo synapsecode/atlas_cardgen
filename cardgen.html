@@ -346,6 +346,7 @@
 
 	<!-- Import the backend Code -->
 	<script src="./backend.js"></script>
+
 	<!-- Custom Script To link everything -->
 	<script>
 		//User Constnants
@@ -429,17 +430,12 @@
 		  }
 		
 		const createAlgoliaSearchObject = (type, value) => {
-			if(type === 'topic'){
-				Backend.createNewTopic(value);
-			}else{
-				Backend.createNewPerson(value);
-			}
 		}
 
 		// Initialize Everything
 		initialize();
 		// Calling the SaveToAtlasQueue
-		Backend.addToAtlasQueue(recievedURL); //Replace with the required URL after Sanitization
+		Backend.upsertToAtlas(); //Replace with the required URL after Sanitization
 		// Solving issue of weird space in noteElement
 		noteElement.value = "";
 	</script>

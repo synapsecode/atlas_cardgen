@@ -1,5 +1,5 @@
 let sourceRootURL = "https://raw.githubusercontent.com/synapsecode/atlas_cardgen/master/";
-const useGeneratedHTML = true;
+const useGeneratedHTML = false;
 
 const replaceHTML = (html, url, apikey, cid) => {
 	return html.replace(
